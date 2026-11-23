@@ -104,6 +104,30 @@ def overview(conn) -> dict:
     wins = conn.execute(
         "SELECT id, name, open, current_ticket_id FROM windows ORDER BY id"
     ).fetchall()
+    # 种类等候桶：与等候墙同口径——停用种类存量仍计入，不随启停吞掉
+    kind_rows = conn.execute(
+        "SELECT id, name, prefix, active FROM business_kinds ORDER BY id"
+    ).fetchall()
+    buckets = []
+    for k in kind_rows:
+        w = conn.execute(
+            "SELECT COUNT(*) AS c FROM tickets WHERE business_day=? AND kind_id=? AND status='等候'",
+            (day, k["id"]),
+        ).fetchone()["c"]
+        s = conn.execute(
+            "SELECT COUNT(*) AS c FROM tickets WHERE business_day=? AND kind_id=? AND status='过号'",
+            (day, k["id"]),
+        ).fetchone()["c"]
+        buckets.append(
+            {
+                "id": k["id"],
+                "名称": k["name"],
+                "前缀": k["prefix"],
+                "启用": bool(k["active"]),
+                "等候": w,
+                "过号": s,
+            }
+        )
     return {
         "营业日": day,
         "已封口": is_sealed(conn, day),
@@ -114,6 +138,7 @@ def overview(conn) -> dict:
         "已办结": cnt("已办结"),
         "已作废": cnt("已作废"),
         "开放窗口": sum(1 for w in wins if w["open"]),
+        "种类桶": buckets,
         "窗口": [
             {
                 "id": w["id"],

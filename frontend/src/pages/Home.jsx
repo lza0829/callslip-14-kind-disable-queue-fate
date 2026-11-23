@@ -26,6 +26,18 @@ export default function Home() {
         ))}
       </div>
       <section className="panel">
+        <h2>种类等候桶</h2>
+        <ul className="plain">
+          {o.种类桶.map(b => (
+            <li key={b.id}>
+              <strong>{b.名称}</strong> <span className="tag">{b.前缀}</span>
+              {b.启用 ? '启用中' : <span className="badge">已停用</span>}
+              {' '}· 等候 {b.等候} · 过号 {b.过号}
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="panel">
         <h2>窗口现况</h2>
         <ul className="plain">
           {o.窗口.map(w => (

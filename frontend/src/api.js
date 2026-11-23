@@ -17,6 +17,7 @@ export const api = {
   health: () => req('/健康'),
   overview: () => req('/总览'),
   kinds: () => req('/业务种类'),
+  kindEvents: () => req('/业务种类/流水'),
   setKindActive: (id, 启用) => req(`/业务种类/${id}/启停`, { method: 'POST', body: JSON.stringify({ 启用 }) }),
   windows: () => req('/窗口'),
   setWindowOpen: (id, 开放) => req(`/窗口/${id}/开闭`, { method: 'POST', body: JSON.stringify({ 开放 }) }),

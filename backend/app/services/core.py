@@ -67,7 +67,7 @@ def require_status(status: str) -> str:
 
 def ticket_dict(conn, row) -> dict:
     kind = conn.execute(
-        "SELECT name, prefix FROM business_kinds WHERE id=?", (row["kind_id"],)
+        "SELECT name, prefix, active FROM business_kinds WHERE id=?", (row["kind_id"],)
     ).fetchone()
     win = None
     if row["window_id"]:
@@ -78,6 +78,7 @@ def ticket_dict(conn, row) -> dict:
         "号牌": row["slip_no"],
         "业务种类": kind["name"] if kind else "",
         "前缀": kind["prefix"] if kind else "",
+        "种类启用": bool(kind["active"]) if kind else None,
         "营业日": row["business_day"],
         "状态": row["status"],
         "窗口": win,

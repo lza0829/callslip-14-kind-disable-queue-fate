@@ -53,7 +53,11 @@ export default function Call() {
           <label>限定种类（可空）
             <select value={kid} onChange={e => setKid(e.target.value)}>
               <option value="">不限</option>
-              {kinds.map(k => <option key={k.id} value={k.id}>{k.名称}</option>)}
+              {kinds.map(k => (
+                <option key={k.id} value={k.id}>
+                  {k.名称}{k.启用 ? '' : '（停用·清存量）'}
+                </option>
+              ))}
             </select>
           </label>
           <button type="button" onClick={onCall}>叫下一号</button>
@@ -63,7 +67,10 @@ export default function Call() {
         {current && (
           <div className="slip" style={{ marginTop: 16 }}>
             <div className="no">{current.号牌}</div>
-            <div className="meta">{current.业务种类} · {current.状态}</div>
+            <div className="meta">
+              {current.业务种类} · {current.状态}
+              {current.种类启用 === false && ' · 种类已停用（存量办结）'}
+            </div>
             <div className="actions">
               <button type="button" onClick={() => onFinish(current.id)}>办结</button>
               <button type="button" className="ghost" onClick={() => onSkip(current.id)}>过号</button>

@@ -36,28 +36,3 @@ def set_open(conn, window_id: int, open_: bool) -> dict:
         raise HTTPException(400, detail="窗口仍有在办号，不可关闭")
     conn.execute("UPDATE windows SET open=? WHERE id=?", (1 if open_ else 0, window_id))
     return next(w for w in list_windows(conn) if w["id"] == window_id)
-
-
-def list_kinds(conn) -> list[dict]:
-    rows = conn.execute("SELECT * FROM business_kinds ORDER BY id").fetchall()
-    return [
-        {
-            "id": r["id"],
-            "名称": r["name"],
-            "前缀": r["prefix"],
-            "序号": r["seq"],
-            "启用": bool(r["active"]),
-        }
-        for r in rows
-    ]
-
-
-def set_kind_active(conn, kind_id: int, active: bool) -> dict:
-    row = conn.execute("SELECT * FROM business_kinds WHERE id=?", (kind_id,)).fetchone()
-    if not row:
-        raise HTTPException(404, detail="业务种类不存在")
-    conn.execute(
-        "UPDATE business_kinds SET active=? WHERE id=?",
-        (1 if active else 0, kind_id),
-    )
-    return next(k for k in list_kinds(conn) if k["id"] == kind_id)

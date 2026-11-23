@@ -28,8 +28,12 @@ export default function Wall() {
         </section>
       )}
       {wall.墙面.map(block => (
-        <section className="panel" key={block.业务种类}>
-          <h2>{block.业务种类} · 等候 {block.等候数} · 过号 {block.过号数}</h2>
+        <section className={block.启用 ? 'panel' : 'panel off'} key={block.业务种类}>
+          <h2>
+            {block.业务种类}
+            {!block.启用 && <span className="badge">已停用 · 禁新发号 · 存量可叫办</span>}
+            {' '}· 等候 {block.等候数} · 过号 {block.过号数}
+          </h2>
           <div className="card-grid">
             {block.队列.length === 0 && <p className="muted">暂无号牌</p>}
             {block.队列.map(t => (

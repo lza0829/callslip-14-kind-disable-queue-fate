@@ -54,6 +54,18 @@ CREATE TABLE IF NOT EXISTS day_seals (
   sealed_at TEXT,
   note TEXT NOT NULL DEFAULT ''
 );
+CREATE TABLE IF NOT EXISTS kind_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind_id INTEGER NOT NULL,
+  action TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  waiting INTEGER NOT NULL DEFAULT 0,
+  skipped INTEGER NOT NULL DEFAULT 0,
+  doing INTEGER NOT NULL DEFAULT 0,
+  seq INTEGER NOT NULL DEFAULT 0,
+  note TEXT NOT NULL DEFAULT '',
+  FOREIGN KEY(kind_id) REFERENCES business_kinds(id)
+);
 '''
 
 
@@ -65,9 +77,13 @@ def connect() -> sqlite3.Connection:
 
 
 @contextmanager
-def db():
+def db(immediate: bool = False):
+    """读口用默认事务；写口传 immediate=True，以 BEGIN IMMEDIATE 起始，
+    使「校验+写入」整体串行化（如停用与发号并发时不留半截）。"""
     conn = connect()
     try:
+        if immediate:
+            conn.execute("BEGIN IMMEDIATE")
         yield conn
         conn.commit()
     except Exception:

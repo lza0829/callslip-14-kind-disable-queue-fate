@@ -29,8 +29,9 @@ def list_tickets(conn, status: str | None = None, day: str | None = None) -> lis
 
 def waiting_wall(conn) -> dict:
     day = business_day(conn)
+    # 口径「禁新发号留存量」：停用种类的分栏不撤，存量等候/过号继续展示（灰显由前端按 启用 标记）
     kinds = conn.execute(
-        "SELECT id, name, prefix FROM business_kinds WHERE active=1 ORDER BY id"
+        "SELECT id, name, prefix, active FROM business_kinds ORDER BY id"
     ).fetchall()
     wall = []
     for k in kinds:
@@ -44,6 +45,7 @@ def waiting_wall(conn) -> dict:
             {
                 "业务种类": k["name"],
                 "前缀": k["prefix"],
+                "启用": bool(k["active"]),
                 "等候数": sum(1 for r in rows if r["status"] == "等候"),
                 "过号数": sum(1 for r in rows if r["status"] == "过号"),
                 "队列": [ticket_dict(conn, r) for r in rows],
@@ -63,10 +65,12 @@ def waiting_wall(conn) -> dict:
 
 
 def take_ticket(conn, kind_id: int) -> dict:
+    # 须在 immediate 事务内调用：校验启停与推进游标、写入号牌同属一个串行化区间，
+    # 与启停写口互斥，并发停用不留半截。
     day = require_open_day(conn)
     kind = kind_row(conn, kind_id)
     if not kind["active"]:
-        raise HTTPException(400, detail="该业务种类已停用")
+        raise HTTPException(400, detail=f"业务种类「{kind['name']}」已停用，禁止新发号")
     open_wins = conn.execute("SELECT COUNT(*) AS c FROM windows WHERE open=1").fetchone()["c"]
     if open_wins == 0:
         raise HTTPException(400, detail="无开放窗口，禁止取号")
@@ -87,6 +91,7 @@ def take_ticket(conn, kind_id: int) -> dict:
 
 
 def call_next(conn, window_id: int, kind_id: int | None = None) -> dict:
+    # 口径「禁新发号留存量」：叫号不校验种类启停——停用种类的存量等候仍可被可办窗口叫号办结。
     day = require_open_day(conn)
     win = window_row(conn, window_id)
     if not win["open"]:
@@ -155,6 +160,7 @@ def mark_skip(conn, ticket_id: int) -> dict:
 
 
 def recall(conn, ticket_id: int, window_id: int | None = None) -> dict:
+    # 口径同上：停用种类的存量过号仍可重叫回窗办结，不冻结。
     day = require_open_day(conn)
     row = ticket_row(conn, ticket_id)
     if row["business_day"] != day:
